@@ -17,7 +17,7 @@ journey across your entire stack.
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/kyletowner/flowview.git
+git clone https://github.com/CreativeCode-Works/flowview.git
 cd flowview
 npm install
 ```
