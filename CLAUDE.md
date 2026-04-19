@@ -14,6 +14,15 @@ We are the single pane of glass that shows everything, together, per contact.
 
 Domain: flowview.dev
 
+## GitHub & Git Config
+
+- **Repo:** `CreativeCode-Works/flowview` (public)
+- **GitHub account:** `CreativeCode-Works` — must be the active `gh` account when pushing.
+  Switch with `gh auth switch` if needed. Do NOT push under `escoaching`.
+- **Git identity (repo-level):** Kyle Towner <kyle@creativecode.works>
+  Already configured via `git config user.name` / `git config user.email` (not global).
+- **Protocol:** HTTPS
+
 ## Phase 1 Scope (90 days from 2026-04-19)
 
 **In scope:**
