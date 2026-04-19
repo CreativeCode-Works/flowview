@@ -1,65 +1,75 @@
-import Image from "next/image";
+import { WaitlistForm } from "@/components/WaitlistForm";
+
+const PAIN_POINTS = [
+  {
+    title: "See the full picture",
+    description:
+      "Your automations span ActiveCampaign, Zapier, and Stripe. FlowView maps them into one visual flow so you can finally see how everything connects.",
+  },
+  {
+    title: "Find what's broken",
+    description:
+      "Silent webhook failures, tag conflicts, contacts stuck in limbo. FlowView audits your stack for 20+ failure modes that silently cost revenue.",
+  },
+  {
+    title: "Replay any contact's journey",
+    description:
+      "Pick any contact and see exactly what happened to them — every automation, every tag, every charge — across your entire stack, on one timeline.",
+  },
+];
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="flex min-h-screen flex-col">
+      {/* Hero */}
+      <section className="flex flex-1 flex-col items-center justify-center px-6 py-24 text-center">
+        <p className="mb-4 text-sm font-medium uppercase tracking-wider text-blue-400">
+          Automation Observability
+        </p>
+        <h1 className="mx-auto max-w-3xl text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
+          See every automation in your stack.{" "}
+          <span className="text-zinc-400">
+            Find what&apos;s broken before your customers do.
+          </span>
+        </h1>
+        <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-zinc-400">
+          FlowView connects to your martech tools, maps your entire automation
+          stack into one visual flow, and audits it for the failures that
+          silently cost you customers and revenue.
+        </p>
+
+        {/* Email capture */}
+        <div className="relative mt-10 w-full max-w-md">
+          <WaitlistForm />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <p className="mt-4 text-xs text-zinc-600">
+          Free audit report for early access members. No credit card required.
+        </p>
+      </section>
+
+      {/* Pain points */}
+      <section className="border-t border-zinc-800 px-6 py-20">
+        <div className="mx-auto grid max-w-5xl gap-12 md:grid-cols-3">
+          {PAIN_POINTS.map((point) => (
+            <div key={point.title}>
+              <h3 className="mb-3 text-lg font-semibold text-white">
+                {point.title}
+              </h3>
+              <p className="text-sm leading-relaxed text-zinc-400">
+                {point.description}
+              </p>
+            </div>
+          ))}
         </div>
-      </main>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-zinc-800 px-6 py-8">
+        <p className="text-center text-xs text-zinc-600">
+          FlowView &mdash; Automation observability for service businesses.
+        </p>
+      </footer>
     </div>
   );
 }
