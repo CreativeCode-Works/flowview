@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { getNango } from "@/lib/nango";
+import { createNangoClient } from "@/lib/nango";
 import { saveConnection, removeConnection } from "@/app/(dashboard)/connections/actions";
 import type { Platform } from "@/types/unified";
 
@@ -39,7 +39,12 @@ export function ConnectionCard({
     setError(null);
 
     try {
-      const nango = getNango();
+      // Get a connect session token from our server
+      const sessionRes = await fetch("/api/nango/session", { method: "POST" });
+      const sessionData = await sessionRes.json();
+      if (!sessionRes.ok) throw new Error(sessionData.error);
+
+      const nango = createNangoClient(sessionData.token);
       const connectionId = `${accountId}-${platform}`;
       const result = await nango.auth(platform, connectionId);
 
