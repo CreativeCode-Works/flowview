@@ -47,3 +47,35 @@ Phase 1 needs (AC, Zapier, Stripe). Self-hosting requires VPS + Postgres + Redis
 rate/volume limits. Decision is easily reversible.
 
 **Impact:** No infrastructure to manage for OAuth. Simplifies Phase 1 ops.
+
+---
+
+### 2026-04-19 — ActiveCampaign API Quirks
+
+**Context:** Researching AC API v3 to build typed client and integration scaffold.
+
+**Finding:** Several non-obvious behaviors:
+1. Nearly all values returned as strings, including numbers and booleans (`"1"` not `1`)
+2. Rate limit is 5 req/s per account — need built-in throttling
+3. Automation list endpoint does NOT expose trigger/action structure — only name, status, counts. The `blocks` link is internal and undocumented.
+4. Tags are NOT embedded in contact responses — must sideload with `?include=contactTags.tag` or fetch separately
+5. Contact pagination: offset-based (`limit`/`offset`), max 100 per page. For deep pagination, use `id_greater` instead of offset for better performance.
+6. Base URL varies by region — NOT always `api-us1.com`. Must store per-account.
+7. AC uses API key auth (`Api-Token` header), not OAuth. Nango may still manage the credential but there's no OAuth dance.
+8. If webhook endpoint returns HTTP 410, AC permanently deactivates it.
+
+**Decision:** Built rate limiter into client (220ms gap between requests). Type everything as strings and coerce in normalize.ts. Store base URL per connection.
+
+**Impact:** Can't build detailed automation step visualization from AC API alone — we'll show automations as single nodes with entry/exit counts. May need to explore the undocumented blocks endpoint later if we want step-level detail.
+
+---
+
+### 2026-04-19 — GitHub Account Setup
+
+**Context:** Initially pushed repo to wrong GitHub account (escoaching instead of CreativeCode-Works).
+
+**Finding:** `gh auth` supports multiple accounts. Can switch with `gh auth switch`.
+
+**Decision:** Set repo-level git config for identity (`Kyle Towner <kyle@creativecode.works>`), keeping global config separate for work account. Both gh accounts stay authenticated.
+
+**Impact:** Must verify active `gh` account before creating repos or pushing. CLAUDE.md documents this.
