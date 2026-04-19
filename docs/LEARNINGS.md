@@ -79,3 +79,33 @@ rate/volume limits. Decision is easily reversible.
 **Decision:** Set repo-level git config for identity (`Kyle Towner <kyle@creativecode.works>`), keeping global config separate for work account. Both gh accounts stay authenticated.
 
 **Impact:** Must verify active `gh` account before creating repos or pushing. CLAUDE.md documents this.
+
+---
+
+### 2026-04-19 — Zapier API Limitations
+
+**Context:** Researching Zapier API to build integration for reading Zap configurations and run history.
+
+**Finding:** Major limitations:
+1. Requires a published Zapier integration (Partner API) — no personal access token
+2. Zap run/task history API is experimental and NOT publicly available
+3. `get_params` only returns params for steps belonging to YOUR app, not third-party steps
+4. v1 uses integer IDs, v2 uses UUIDs — we use v2
+5. `last_successful_run_date` on the Zap object is the only run proxy signal
+6. Rate limit: 150 req/min
+
+**Decision:** Built Zapier integration around what's available: Zap listing with step metadata, state tracking. Using `last_successful_run_date` as a lightweight proxy for run events. The missing run history will be surfaced as an audit finding — "Zapier run history unavailable for detailed analysis."
+
+**Impact:** Zapier will be the thinnest integration. Flow graph will show Zaps as nodes with connected apps, but can't show per-contact Zap runs. This is a known limitation to communicate to users.
+
+---
+
+### 2026-04-19 — Stripe Events API 30-Day Limit
+
+**Context:** Building Stripe integration for event history sync.
+
+**Finding:** Stripe's `/v1/events` endpoint only retains events for 30 days, not the 90 days we planned. To get longer history, we'd need to capture events in real-time via webhooks and store them ourselves.
+
+**Decision:** For v1, sync the 30 days available via the API. Also pull charges, subscriptions, and invoices directly (these are retained indefinitely) to reconstruct a fuller history. Add webhook listener as a follow-up task for real-time event capture.
+
+**Impact:** Initial Stripe event history will be limited to 30 days. Charges/subscriptions/invoices fill the gap for financial events. Real-time webhook capture should be prioritized for week 7.
