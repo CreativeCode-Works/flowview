@@ -4,25 +4,23 @@ import type {
   AuditContext,
 } from "@/types/unified";
 
+import * as orphanedTags from "./orphaned-tags";
+import * as inactiveAutomations from "./inactive-automations";
+import * as identityFragmentation from "./identity-fragmentation";
+import * as webhookFailures from "./webhook-failures";
+import * as stuckContacts from "./stuck-contacts";
+
 export interface AuditRule {
   metadata: AuditRuleMetadata;
   evaluate: (context: AuditContext) => AuditFinding[];
 }
 
-// Rules are registered here as they're implemented.
-// Import and add each rule to this array.
 const rules: AuditRule[] = [
-  // Phase 1 rules will be added here, e.g.:
-  // orphanedTags,
-  // inactiveAutomations,
-  // identityFragmentation,
-  // failedWebhooks,
-  // stuckContacts,
-  // missingTagHandler,
-  // emptyAutomations,
-  // duplicateWebhooks,
-  // expiredSubscriptions,
-  // unlinkedZaps,
+  orphanedTags,
+  inactiveAutomations,
+  identityFragmentation,
+  webhookFailures,
+  stuckContacts,
 ];
 
 export function getAllRules(): AuditRule[] {

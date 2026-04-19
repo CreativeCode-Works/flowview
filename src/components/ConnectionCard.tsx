@@ -1,5 +1,9 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { getNango } from "@/lib/nango";
+import { saveConnection, removeConnection } from "@/app/(dashboard)/connections/actions";
 import type { Platform } from "@/types/unified";
 
 interface ConnectionCardProps {
@@ -23,8 +27,60 @@ export function ConnectionCard({
   description,
   status,
   lastSyncedAt,
+  accountId,
 }: ConnectionCardProps) {
+  const [isPending, setIsPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
   const isConnected = status === "active";
+
+  async function handleConnect() {
+    setIsPending(true);
+    setError(null);
+
+    try {
+      const nango = getNango();
+      const connectionId = `${accountId}-${platform}`;
+      const result = await nango.auth(platform, connectionId);
+
+      if (result) {
+        const saveResult = await saveConnection(
+          accountId,
+          platform,
+          connectionId
+        );
+        if (!saveResult.success) {
+          setError(saveResult.error);
+        }
+        router.refresh();
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to connect"
+      );
+    } finally {
+      setIsPending(false);
+    }
+  }
+
+  async function handleDisconnect() {
+    setIsPending(true);
+    setError(null);
+
+    try {
+      const result = await removeConnection(accountId, platform);
+      if (!result.success) {
+        setError(result.error);
+      }
+      router.refresh();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to disconnect"
+      );
+    } finally {
+      setIsPending(false);
+    }
+  }
 
   return (
     <div className="flex flex-col rounded-xl border border-zinc-800 bg-zinc-900 p-5">
@@ -58,14 +114,22 @@ export function ConnectionCard({
         </p>
       )}
 
+      {error && <p className="mb-3 text-xs text-red-400">{error}</p>}
+
       <button
-        className={`h-9 rounded-lg text-sm font-medium transition-colors ${
+        onClick={isConnected ? handleDisconnect : handleConnect}
+        disabled={isPending}
+        className={`h-9 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
           isConnected
             ? "border border-zinc-700 text-zinc-400 hover:border-red-800 hover:text-red-400"
             : "bg-blue-600 text-white hover:bg-blue-500"
         }`}
       >
-        {isConnected ? "Disconnect" : "Connect"}
+        {isPending
+          ? "..."
+          : isConnected
+            ? "Disconnect"
+            : "Connect"}
       </button>
     </div>
   );
