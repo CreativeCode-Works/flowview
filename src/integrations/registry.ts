@@ -16,7 +16,7 @@ export const integrations: Record<Platform, IntegrationConfig> = {
     description: "Marketing automation, email campaigns, CRM, and deal pipelines",
     icon: "activecampaign",
     authType: "api_key", // AC uses API key, not OAuth
-    nangoIntegrationId: "activecampaign",
+    nangoIntegrationId: "active-campaign",
   },
   zapier: {
     platform: "zapier",
@@ -24,15 +24,15 @@ export const integrations: Record<Platform, IntegrationConfig> = {
     description: "Workflow automation connecting your apps",
     icon: "zapier",
     authType: "oauth",
-    nangoIntegrationId: "zapier",
+    nangoIntegrationId: null, // Zapier requires Partner API — deferred
   },
   stripe: {
     platform: "stripe",
     displayName: "Stripe",
     description: "Payments, subscriptions, and billing",
     icon: "stripe",
-    authType: "oauth",
-    nangoIntegrationId: "stripe",
+    authType: "api_key",
+    nangoIntegrationId: "stripe-api-key",
   },
 };
 

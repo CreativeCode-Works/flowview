@@ -59,6 +59,7 @@ export default async function ConnectionsPage() {
               status={connection?.status ?? null}
               lastSyncedAt={connection?.last_synced_at ?? null}
               accountId={account!.id}
+              nangoIntegrationId={config.nangoIntegrationId}
             />
           );
         })}

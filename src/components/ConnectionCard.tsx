@@ -13,6 +13,7 @@ interface ConnectionCardProps {
   status: string | null;
   lastSyncedAt: string | null;
   accountId: string;
+  nangoIntegrationId: string | null;
 }
 
 const PLATFORM_COLORS: Record<Platform, string> = {
@@ -28,13 +29,16 @@ export function ConnectionCard({
   status,
   lastSyncedAt,
   accountId,
+  nangoIntegrationId,
 }: ConnectionCardProps) {
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const isConnected = status === "active";
+  const isAvailable = nangoIntegrationId !== null;
 
   async function handleConnect() {
+    if (!nangoIntegrationId) return;
     setIsPending(true);
     setError(null);
 
@@ -46,7 +50,7 @@ export function ConnectionCard({
 
       const nango = createNangoClient(sessionData.token);
       const connectionId = `${accountId}-${platform}`;
-      const result = await nango.auth(platform, connectionId);
+      const result = await nango.auth(nangoIntegrationId, connectionId);
 
       if (result) {
         const saveResult = await saveConnection(
@@ -123,18 +127,22 @@ export function ConnectionCard({
 
       <button
         onClick={isConnected ? handleDisconnect : handleConnect}
-        disabled={isPending}
+        disabled={isPending || !isAvailable}
         className={`h-9 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
           isConnected
             ? "border border-zinc-700 text-zinc-400 hover:border-red-800 hover:text-red-400"
-            : "bg-blue-600 text-white hover:bg-blue-500"
+            : !isAvailable
+              ? "border border-zinc-800 text-zinc-600 cursor-not-allowed"
+              : "bg-blue-600 text-white hover:bg-blue-500"
         }`}
       >
-        {isPending
-          ? "..."
-          : isConnected
-            ? "Disconnect"
-            : "Connect"}
+        {!isAvailable
+          ? "Coming soon"
+          : isPending
+            ? "..."
+            : isConnected
+              ? "Disconnect"
+              : "Connect"}
       </button>
     </div>
   );
