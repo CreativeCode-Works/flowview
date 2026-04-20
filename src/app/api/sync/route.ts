@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import type { Platform, FlowNode, Contact, Event } from "@/types/unified";
 
+// Vercel Pro: extend function timeout to 60 seconds
+export const maxDuration = 60;
+
 export async function POST(request: Request) {
   const supabase = await createClient();
 
@@ -106,6 +109,7 @@ export async function POST(request: Request) {
         ],
       };
     } catch (err) {
+      console.error(`Sync error for ${platform}:`, err);
       results[platform] = {
         nodes: 0,
         contacts: 0,
