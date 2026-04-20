@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { ConnectionCard } from "@/components/ConnectionCard";
+import { SyncButton } from "@/components/SyncButton";
 import { integrations } from "@/integrations/registry";
 import type { Platform } from "@/types/unified";
 
@@ -39,12 +40,21 @@ export default async function ConnectionsPage() {
 
   const platforms = Object.keys(integrations) as Platform[];
 
+  const hasActiveConnections = (connections ?? []).some(
+    (c: { status: string }) => c.status === "active"
+  );
+
   return (
     <div>
-      <h1 className="mb-2 text-2xl font-bold text-white">Connections</h1>
-      <p className="mb-8 text-sm text-zinc-400">
-        Connect your tools to start mapping your automation stack.
-      </p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="mb-1 text-2xl font-bold text-white">Connections</h1>
+          <p className="text-sm text-zinc-400">
+            Connect your tools to start mapping your automation stack.
+          </p>
+        </div>
+        {hasActiveConnections && <SyncButton accountId={account!.id} />}
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {platforms.map((platform) => {

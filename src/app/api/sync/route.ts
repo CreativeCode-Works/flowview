@@ -124,40 +124,67 @@ interface SyncOutput {
   };
 }
 
+// Fetch credentials from Nango for a connection
+async function getNangoCredentials(
+  nangoConnectionId: string,
+  integrationId: string
+): Promise<{ apiKey?: string; hostname?: string }> {
+  const res = await fetch(
+    `https://api.nango.dev/connection/${nangoConnectionId}?provider_config_key=${integrationId}`,
+    {
+      headers: {
+        Authorization: `Bearer ${process.env.NANGO_SECRET_KEY}`,
+      },
+    }
+  );
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Nango credential fetch failed: ${body}`);
+  }
+
+  const data = await res.json();
+
+  return {
+    apiKey: data.credentials?.apiKey,
+    hostname: data.connection_config?.hostname,
+  };
+}
+
 async function runPlatformSync(
   platform: Platform,
   connection: Record<string, unknown>,
   accountId: string
 ): Promise<SyncOutput> {
-  const config = (connection.config ?? {}) as Record<string, string>;
+  const nangoConnectionId = connection.nango_connection_id as string;
 
   switch (platform) {
     case "activecampaign": {
+      const creds = await getNangoCredentials(nangoConnectionId, "active-campaign");
       const { ActiveCampaignClient } = await import("@/integrations/activecampaign/client");
       const { syncConfig } = await import("@/integrations/activecampaign/sync-config");
       const { syncEvents } = await import("@/integrations/activecampaign/sync-events");
       const client = new ActiveCampaignClient({
-        baseUrl: config.baseUrl ?? "",
-        apiToken: config.apiToken ?? "",
+        baseUrl: `https://${creds.hostname}`,
+        apiToken: creds.apiKey ?? "",
       });
       const configResult = await syncConfig(client, accountId);
       const eventsResult = await syncEvents(client, accountId);
       return { configResult, eventsResult };
     }
     case "zapier": {
-      const { ZapierClient } = await import("@/integrations/zapier/client");
-      const { syncConfig } = await import("@/integrations/zapier/sync-config");
-      const { syncEvents } = await import("@/integrations/zapier/sync-events");
-      const client = new ZapierClient({ accessToken: config.accessToken ?? "" });
-      const configResult = await syncConfig(client, accountId);
-      const eventsResult = await syncEvents(client, accountId);
-      return { configResult, eventsResult };
+      // Zapier sync not available yet — return empty results
+      return {
+        configResult: { nodes: [], errors: [] },
+        eventsResult: { contacts: [], events: [], errors: [] },
+      };
     }
     case "stripe": {
+      const creds = await getNangoCredentials(nangoConnectionId, "stripe-api-key");
       const { StripeClient } = await import("@/integrations/stripe/client");
       const { syncConfig } = await import("@/integrations/stripe/sync-config");
       const { syncEvents } = await import("@/integrations/stripe/sync-events");
-      const client = new StripeClient({ secretKey: config.secretKey ?? "" });
+      const client = new StripeClient({ secretKey: creds.apiKey ?? "" });
       const configResult = await syncConfig(client, accountId);
       const eventsResult = await syncEvents(client, accountId);
       return { configResult, eventsResult };
