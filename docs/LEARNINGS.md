@@ -109,3 +109,47 @@ rate/volume limits. Decision is easily reversible.
 **Decision:** For v1, sync the 30 days available via the API. Also pull charges, subscriptions, and invoices directly (these are retained indefinitely) to reconstruct a fuller history. Add webhook listener as a follow-up task for real-time event capture.
 
 **Impact:** Initial Stripe event history will be limited to 30 days. Charges/subscriptions/invoices fill the gap for financial events. Real-time webhook capture should be prioritized for week 7.
+
+---
+
+### 2026-04-19 — Zapier Integration: Public Required for Zap Reading API
+
+**Context:** Attempting to connect Zapier through Nango and read users' Zap configurations.
+
+**Finding:** Major discovery — Zapier's Partner API OAuth credentials (Client ID / Client Secret) are ONLY available after publishing a public integration through Zapier's review process. Private integrations cannot access the Partner API at all. There is no personal API key or alternative path.
+
+**Decision:** Built FlowView as a Zapier integration (Auth + Trigger + Action) in the Zapier developer portal. This gives us:
+1. API key auth working (tested successfully)
+2. "New Audit Finding" trigger (polling, tested)
+3. "Log Zap Event" action (receives contact data from user's zaps)
+Once we go public, we get OAuth credentials to also READ users' zaps via the Partner API.
+
+**Impact:** Dual approach — the Action lets users push zap run data to FlowView NOW (no approval needed). Going public unlocks the read API for auto-discovering zap configurations. Submit for public review ASAP.
+
+---
+
+### 2026-04-19 — Nango Connect Session Tokens (No Public Key)
+
+**Context:** Setting up Nango OAuth flow for connecting integrations.
+
+**Finding:** Nango no longer exposes public keys. The frontend SDK now requires a Connect Session Token, generated server-side using the secret key.
+
+**Decision:** Built POST /api/nango/session endpoint that creates a short-lived token, passed to the frontend Nango SDK for OAuth popups.
+
+**Impact:** All Nango auth flows go through our server first. No public key in env vars.
+
+---
+
+### 2026-04-19 — Vercel Deployment Issues
+
+**Context:** Deploying FlowView to Vercel with custom domain flowview.dev.
+
+**Finding:** Multiple issues encountered:
+1. Framework Preset defaulted to "Other" instead of "Next.js" — caused 404 on all routes
+2. Vercel Hobby plan applies auth to deploy URLs (*.vercel.app) — custom domain bypasses this
+3. Supabase RLS was missing INSERT policy on accounts table — caused server error on connections page
+4. DNS A record needed updating from 76.76.21.21 to 216.198.79.1 (Vercel's new IP)
+
+**Decision:** Fixed all issues. Key lesson: always verify Framework Preset is set correctly when creating Vercel projects via CLI.
+
+**Impact:** Deployment pipeline is now working: git push → Vercel auto-deploy → flowview.dev live.
