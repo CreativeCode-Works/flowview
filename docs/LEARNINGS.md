@@ -153,3 +153,26 @@ Once we go public, we get OAuth credentials to also READ users' zaps via the Par
 **Decision:** Fixed all issues. Key lesson: always verify Framework Preset is set correctly when creating Vercel projects via CLI.
 
 **Impact:** Deployment pipeline is now working: git push → Vercel auto-deploy → flowview.dev live.
+
+---
+
+### 2026-04-19 — Zapier Public Integration Submission
+
+**Context:** Submitted FlowView integration for public review on Zapier.
+
+**Finding:** Publishing requirements are significant:
+1. Need 3+ users with live Zaps (got 3 accounts wired up with test data)
+2. Need admin team member with email matching app domain (created kyle@flowview.dev via Google Workspace — can switch to GoDaddy free forwarding)
+3. Description must start with "FlowView is a"
+4. Test account required: integration-testing@zapier.com (created in FlowView)
+5. Trigger needs successful task data — inserted test audit findings to satisfy this
+6. All API endpoints must be production (flowview.dev, not localhost)
+
+**Decision:** Submitted for review on 2026-04-19. Review is in progress (Build → Review → Beta → Partnered). Once approved, we get OAuth Client ID/Secret under Embed → Settings → Credentials, which unlocks the Partner API to read users' Zap configurations.
+
+**Impact:**
+- Keep kyle@flowview.dev email active (required for Partner Program long-term)
+- Keep test account integration-testing@zapier.com active in FlowView
+- Watch for review feedback at kyle@flowview.dev
+- Once approved: add Zapier OAuth credentials to Nango, update Zapier integration from "Coming soon" to active
+- FlowView API key for dev account: stored in Supabase accounts table (query with service role key)
