@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import type { Platform, FlowNode, Contact, Event } from "@/types/unified";
+import type { Platform, FlowNode, FlowEdge, Contact, Event } from "@/types/unified";
+import { inferEdges } from "@/lib/infer-edges";
 
 // Vercel Pro: extend function timeout to 60 seconds
 export const maxDuration = 60;
@@ -119,6 +120,38 @@ export async function POST(request: Request) {
     }
   }
 
+  // After all platforms synced, infer and upsert edges from node configs
+  try {
+    const { data: allNodes } = await supabase
+      .from("flow_nodes")
+      .select("*")
+      .eq("account_id", account.id);
+
+    if (allNodes && allNodes.length > 0) {
+      const flowNodesForEdges: FlowNode[] = allNodes.map(
+        (n: Record<string, unknown>) => ({
+          id: n.id as string,
+          accountId: n.account_id as string,
+          platform: n.platform as Platform,
+          platformId: n.platform_id as string,
+          nodeType: n.node_type as string,
+          name: n.name as string,
+          status: n.status as string | null,
+          config: (n.config ?? {}) as Record<string, unknown>,
+          createdAt: n.created_at as string,
+          updatedAt: n.updated_at as string,
+        })
+      ) as FlowNode[];
+
+      const inferred = inferEdges(flowNodesForEdges);
+      if (inferred.length > 0) {
+        await upsertEdges(supabase, inferred);
+      }
+    }
+  } catch (err) {
+    console.error("Edge inference error:", err);
+  }
+
   return NextResponse.json({ success: true, results });
 }
 
@@ -231,6 +264,34 @@ async function upsertNodes(supabase: SupabaseClient, nodes: FlowNode[]) {
       .upsert(chunk, {
         onConflict: "account_id,platform,platform_id",
       });
+  }
+}
+
+async function upsertEdges(
+  supabase: SupabaseClient,
+  edges: Array<{
+    accountId: string;
+    sourceNodeId: string;
+    targetNodeId: string;
+    edgeType: string;
+    label: string | null;
+    metadata: Record<string, unknown>;
+  }>
+) {
+  const rows = edges.map((e) => ({
+    account_id: e.accountId,
+    source_node_id: e.sourceNodeId,
+    target_node_id: e.targetNodeId,
+    edge_type: e.edgeType,
+    label: e.label,
+    metadata: e.metadata,
+  }));
+
+  for (let i = 0; i < rows.length; i += 100) {
+    const chunk = rows.slice(i, i + 100);
+    await supabase.from("flow_edges").upsert(chunk, {
+      onConflict: "account_id,source_node_id,target_node_id,edge_type",
+    });
   }
 }
 

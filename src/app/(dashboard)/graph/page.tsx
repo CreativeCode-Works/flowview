@@ -63,43 +63,13 @@ export default async function GraphPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="mb-1 text-2xl font-bold text-white">Flow Graph</h1>
-          <p className="text-sm text-zinc-400">
-            {flowNodes.length > 0
-              ? `${flowNodes.length} nodes across your automation stack`
-              : "Connect your tools and run a sync to see your flow graph."}
-          </p>
-        </div>
-        {flowNodes.length > 0 && (
-          <div className="flex gap-3">
-            {(["activecampaign", "zapier", "stripe"] as Platform[]).map(
-              (p) => {
-                const count = flowNodes.filter((n) => n.platform === p).length;
-                if (count === 0) return null;
-                const colors: Record<Platform, string> = {
-                  activecampaign: "bg-blue-600",
-                  zapier: "bg-orange-500",
-                  stripe: "bg-purple-600",
-                };
-                const labels: Record<Platform, string> = {
-                  activecampaign: "AC",
-                  zapier: "Zapier",
-                  stripe: "Stripe",
-                };
-                return (
-                  <span
-                    key={p}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-white ${colors[p]}`}
-                  >
-                    {labels[p]}: {count}
-                  </span>
-                );
-              }
-            )}
-          </div>
-        )}
+      <div className="mb-4">
+        <h1 className="mb-1 text-2xl font-bold text-white">Flow Graph</h1>
+        <p className="text-sm text-zinc-400">
+          {flowNodes.length > 0
+            ? `${flowNodes.length} nodes \u00b7 ${flowEdges.length} connections`
+            : "Connect your tools and run a sync to see your flow graph."}
+        </p>
       </div>
       <FlowGraph flowNodes={flowNodes} flowEdges={flowEdges} />
     </div>
