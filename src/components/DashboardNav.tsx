@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { href: "/graph", label: "Flow Graph" },
   { href: "/audit", label: "Audit" },
   { href: "/replay", label: "Journey Replay" },
+  { href: "/settings", label: "Settings" },
 ];
 
 export function DashboardNav({ userEmail }: { userEmail: string }) {
