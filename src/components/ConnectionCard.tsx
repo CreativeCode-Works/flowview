@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createNangoClient } from "@/lib/nango";
+import { ConnectUI } from "@nangohq/frontend";
 import { saveConnection, removeConnection } from "@/app/(dashboard)/connections/actions";
 import type { Platform } from "@/types/unified";
 
@@ -48,26 +48,35 @@ export function ConnectionCard({
       const sessionData = await sessionRes.json();
       if (!sessionRes.ok) throw new Error(sessionData.error);
 
-      const nango = createNangoClient(sessionData.token);
-      const result = await nango.auth(nangoIntegrationId);
+      // Use Nango's Connect UI — handles both OAuth and API Key flows
+      const connectUI = new ConnectUI({
+        sessionToken: sessionData.token,
+        onEvent: async (event) => {
+          if (event.type === "connect") {
+            // Connection successful
+            const nangoConnectionId =
+              event.payload?.connectionId ?? `${accountId}-${platform}`;
+            const saveResult = await saveConnection(
+              accountId,
+              platform,
+              String(nangoConnectionId)
+            );
+            if (!saveResult.success) {
+              setError(saveResult.error);
+            }
+            router.refresh();
+            setIsPending(false);
+          } else if (event.type === "close") {
+            setIsPending(false);
+          }
+        },
+      });
 
-      if (result) {
-        const nangoConnectionId = result.connectionId ?? `${accountId}-${platform}`;
-        const saveResult = await saveConnection(
-          accountId,
-          platform,
-          nangoConnectionId
-        );
-        if (!saveResult.success) {
-          setError(saveResult.error);
-        }
-        router.refresh();
-      }
+      connectUI.open();
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to connect"
       );
-    } finally {
       setIsPending(false);
     }
   }
