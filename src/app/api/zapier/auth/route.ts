@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 // Zapier calls this endpoint to verify the user's API key is valid.
 // This is the "Test Authentication" step in Zapier's integration setup.
 export async function GET(request: Request) {
-  const apiKey = request.headers.get("X-API-Key");
+  // Zapier sends the API key as a URL param or header depending on config
+  const url = new URL(request.url);
+  const apiKey =
+    request.headers.get("X-API-Key") ??
+    request.headers.get("X-API-KEY") ??
+    url.searchParams.get("api_key");
 
   if (!apiKey) {
     return NextResponse.json(
@@ -13,7 +18,7 @@ export async function GET(request: Request) {
     );
   }
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   // Look up the account by API key
   const { data: account, error } = await supabase

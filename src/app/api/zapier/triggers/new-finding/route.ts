@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 // Zapier polls this endpoint to check for new audit findings.
 // Returns the most recent findings so Zapier can trigger workflows.
 export async function GET(request: Request) {
-  const apiKey = request.headers.get("X-API-Key");
+  const url = new URL(request.url);
+  const apiKey =
+    request.headers.get("X-API-Key") ??
+    request.headers.get("X-API-KEY") ??
+    url.searchParams.get("api_key");
 
   if (!apiKey) {
     return NextResponse.json(
@@ -13,7 +17,7 @@ export async function GET(request: Request) {
     );
   }
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const { data: account } = await supabase
     .from("accounts")
