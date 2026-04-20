@@ -40,54 +40,59 @@ export function SyncButton({ accountId }: { accountId: string }) {
     setResult(null);
 
     try {
-      const res = await fetch("/api/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ accountId }),
-      });
-      const data = await res.json();
+      const platforms = ["activecampaign", "stripe"];
+      const details: string[] = [];
+      let totalNodes = 0;
+      let totalContacts = 0;
+      let totalEvents = 0;
+      let hadError = false;
 
-      if (res.ok) {
-        const details: string[] = [];
-        let totalNodes = 0;
-        let totalContacts = 0;
-        let totalEvents = 0;
+      for (let i = 0; i < platforms.length; i++) {
+        const platform = platforms[i];
+        setStepIndex(i * 3); // Jump progress for each platform
 
-        for (const [platform, r] of Object.entries(data.results ?? {})) {
-          const result = r as {
-            nodes: number;
-            contacts: number;
-            events: number;
-            errors: string[];
-          };
-          totalNodes += result.nodes;
-          totalContacts += result.contacts;
-          totalEvents += result.events;
+        try {
+          const res = await fetch("/api/sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ accountId, platform }),
+          });
+          const data = await res.json();
 
-          if (result.nodes > 0 || result.contacts > 0 || result.events > 0) {
+          if (res.ok && data.results?.[platform]) {
+            const r = data.results[platform] as {
+              nodes: number;
+              contacts: number;
+              events: number;
+              errors: string[];
+            };
+            totalNodes += r.nodes;
+            totalContacts += r.contacts;
+            totalEvents += r.events;
             details.push(
-              `${platform}: ${result.nodes} nodes, ${result.contacts} contacts, ${result.events} events`
+              `${platform}: ${r.nodes} nodes, ${r.contacts} contacts, ${r.events} events`
             );
+            if (r.errors.length > 0) {
+              details.push(`${platform}: ${r.errors.length} error(s)`);
+            }
+          } else {
+            details.push(`${platform}: ${data.error ?? "failed"}`);
+            hadError = true;
           }
-          if (result.errors.length > 0) {
-            details.push(
-              `${platform}: ${result.errors.length} error(s)`
-            );
-          }
+        } catch {
+          details.push(`${platform}: timed out or failed`);
+          hadError = true;
         }
-
-        setResult({
-          success: true,
-          message: `Synced ${totalNodes} nodes, ${totalContacts} contacts, and ${totalEvents} events`,
-          details,
-        });
-        router.refresh();
-      } else {
-        setResult({
-          success: false,
-          message: data.error ?? "Sync failed",
-        });
       }
+
+      setResult({
+        success: !hadError || totalNodes > 0,
+        message: totalNodes > 0 || totalContacts > 0
+          ? `Synced ${totalNodes} nodes, ${totalContacts} contacts, and ${totalEvents} events`
+          : "Sync failed for all platforms",
+        details,
+      });
+      router.refresh();
     } catch {
       setResult({
         success: false,

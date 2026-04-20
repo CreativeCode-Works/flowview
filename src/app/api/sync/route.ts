@@ -61,22 +61,25 @@ export async function POST(request: Request) {
     const platform = connection.platform as Platform;
 
     try {
-      // Run platform-specific sync
+      // Run platform-specific sync (config only for speed — events in background later)
       const { configResult, eventsResult } = await runPlatformSync(
         platform,
         connection,
         account.id
       );
 
-      // Upsert contacts
+      // Upsert flow nodes
+      if (configResult.nodes.length > 0) {
+        await upsertNodes(supabase, configResult.nodes);
+      }
+
+      // Upsert contacts (from events sync — lightweight list only)
       if (eventsResult.contacts.length > 0) {
         await upsertContacts(supabase, eventsResult.contacts);
       }
 
-      // Insert events
-      if (eventsResult.events.length > 0) {
-        await insertEvents(supabase, eventsResult.events, account.id);
-      }
+      // Skip bulk event insert for now to stay under Vercel timeout
+      // Events will be synced via background jobs (Trigger.dev) later
 
       // Update last synced
       await supabase
@@ -163,17 +166,22 @@ async function runPlatformSync(
       const creds = await getNangoCredentials(nangoConnectionId, "active-campaign");
       const { ActiveCampaignClient } = await import("@/integrations/activecampaign/client");
       const { syncConfig } = await import("@/integrations/activecampaign/sync-config");
-      const { syncEvents } = await import("@/integrations/activecampaign/sync-events");
       const client = new ActiveCampaignClient({
         baseUrl: `https://${creds.hostname}`,
         apiToken: creds.apiKey ?? "",
       });
+      // Config sync only (automations, tags, lists, etc.) — fast
       const configResult = await syncConfig(client, accountId);
-      const eventsResult = await syncEvents(client, accountId);
-      return { configResult, eventsResult };
+      // Get contact list without per-contact event history — much faster
+      const contacts = await client.getContacts();
+      const { normalizeContact } = await import("@/integrations/activecampaign/normalize");
+      const normalizedContacts = contacts.map((c) => normalizeContact(c, accountId));
+      return {
+        configResult,
+        eventsResult: { contacts: normalizedContacts, events: [], errors: [] },
+      };
     }
     case "zapier": {
-      // Zapier sync not available yet — return empty results
       return {
         configResult: { nodes: [], errors: [] },
         eventsResult: { contacts: [], events: [], errors: [] },
@@ -183,11 +191,17 @@ async function runPlatformSync(
       const creds = await getNangoCredentials(nangoConnectionId, "stripe-api-key");
       const { StripeClient } = await import("@/integrations/stripe/client");
       const { syncConfig } = await import("@/integrations/stripe/sync-config");
-      const { syncEvents } = await import("@/integrations/stripe/sync-events");
       const client = new StripeClient({ secretKey: creds.apiKey ?? "" });
+      // Config sync only — fast
       const configResult = await syncConfig(client, accountId);
-      const eventsResult = await syncEvents(client, accountId);
-      return { configResult, eventsResult };
+      // Get customers without full event history
+      const customers = await client.getCustomers();
+      const { normalizeCustomerToContact } = await import("@/integrations/stripe/normalize");
+      const normalizedContacts = customers.map((c) => normalizeCustomerToContact(c, accountId));
+      return {
+        configResult,
+        eventsResult: { contacts: normalizedContacts, events: [], errors: [] },
+      };
     }
   }
 }
