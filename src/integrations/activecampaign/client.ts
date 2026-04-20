@@ -136,6 +136,27 @@ export class ActiveCampaignClient {
     return this.paginate("/deals", "deals");
   }
 
+  // ---- Automation detail endpoints ----
+
+  /**
+   * Fetch the internal blocks/steps for an automation.
+   * Uses the `links.blocks` URL from the automation response.
+   * This endpoint is undocumented but present in the API response.
+   */
+  async getAutomationBlocks(
+    automationId: string
+  ): Promise<Record<string, unknown>[]> {
+    try {
+      const response = await this.request<{
+        blocks?: Record<string, unknown>[];
+      }>(`/automations/${automationId}/blocks`);
+      return response.blocks ?? [];
+    } catch {
+      // Endpoint may not be available — fail silently
+      return [];
+    }
+  }
+
   // ---- Contact sync endpoints ----
 
   async getContacts(
