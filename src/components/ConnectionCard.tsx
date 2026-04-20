@@ -49,14 +49,14 @@ export function ConnectionCard({
       if (!sessionRes.ok) throw new Error(sessionData.error);
 
       const nango = createNangoClient(sessionData.token);
-      const connectionId = `${accountId}-${platform}`;
-      const result = await nango.auth(nangoIntegrationId, connectionId);
+      const result = await nango.auth(nangoIntegrationId);
 
       if (result) {
+        const nangoConnectionId = result.connectionId ?? `${accountId}-${platform}`;
         const saveResult = await saveConnection(
           accountId,
           platform,
-          connectionId
+          nangoConnectionId
         );
         if (!saveResult.success) {
           setError(saveResult.error);
