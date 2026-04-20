@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { runAllRules } from "@/audit-rules/registry";
+import { generateAuditSummary } from "@/lib/claude";
 import type { AuditContext, Platform, NodeType, EdgeType } from "@/types/unified";
 
 export async function POST(request: Request) {
@@ -138,6 +139,9 @@ export async function POST(request: Request) {
       await supabase.from("audit_findings").insert(rows);
     }
 
+    // Generate AI summary
+    const summary = await generateAuditSummary(findings);
+
     // Update audit run
     await supabase
       .from("audit_runs")
@@ -145,9 +149,7 @@ export async function POST(request: Request) {
         status: "completed",
         completed_at: new Date().toISOString(),
         finding_count: findings.length,
-        summary: findings.length === 0
-          ? "No issues found. Your automation stack looks healthy."
-          : `Found ${findings.length} issue${findings.length !== 1 ? "s" : ""} across your automation stack.`,
+        summary,
       })
       .eq("id", auditRun.id);
 
