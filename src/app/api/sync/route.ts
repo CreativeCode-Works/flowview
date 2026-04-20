@@ -135,7 +135,7 @@ interface SyncOutput {
 async function getNangoCredentials(
   nangoConnectionId: string,
   integrationId: string
-): Promise<{ apiKey?: string; hostname?: string }> {
+): Promise<{ apiKey?: string; hostname?: string; username?: string; password?: string }> {
   const res = await fetch(
     `https://api.nango.dev/connection/${nangoConnectionId}?provider_config_key=${integrationId}`,
     {
@@ -151,10 +151,13 @@ async function getNangoCredentials(
   }
 
   const data = await res.json();
+  console.log(`Nango creds for ${integrationId}: keys=${Object.keys(data.credentials ?? {}).join(",")}, config_keys=${Object.keys(data.connection_config ?? {}).join(",")}`);
 
   return {
-    apiKey: data.credentials?.apiKey,
+    apiKey: data.credentials?.apiKey ?? data.credentials?.api_key,
     hostname: data.connection_config?.hostname,
+    username: data.credentials?.username,
+    password: data.credentials?.password,
   };
 }
 
@@ -174,15 +177,11 @@ async function runPlatformSync(
         baseUrl: `https://${creds.hostname}`,
         apiToken: creds.apiKey ?? "",
       });
-      // Config sync only (automations, tags, lists, etc.) — fast
+      // Config sync only — skip contacts to stay under timeout
       const configResult = await syncConfig(client, accountId);
-      // Get contact list without per-contact event history — much faster
-      const contacts = await client.getContacts();
-      const { normalizeContact } = await import("@/integrations/activecampaign/normalize");
-      const normalizedContacts = contacts.map((c) => normalizeContact(c, accountId));
       return {
         configResult,
-        eventsResult: { contacts: normalizedContacts, events: [], errors: [] },
+        eventsResult: { contacts: [], events: [], errors: [] },
       };
     }
     case "zapier": {
@@ -193,18 +192,16 @@ async function runPlatformSync(
     }
     case "stripe": {
       const creds = await getNangoCredentials(nangoConnectionId, "stripe-api-key");
+      const stripeKey = creds.apiKey ?? creds.password ?? creds.username ?? "";
+      console.log(`Stripe key prefix: ${stripeKey.substring(0, 7)}...`);
       const { StripeClient } = await import("@/integrations/stripe/client");
       const { syncConfig } = await import("@/integrations/stripe/sync-config");
-      const client = new StripeClient({ secretKey: creds.apiKey ?? "" });
-      // Config sync only — fast
+      const client = new StripeClient({ secretKey: stripeKey });
+      // Config sync only — skip customers to stay under timeout
       const configResult = await syncConfig(client, accountId);
-      // Get customers without full event history
-      const customers = await client.getCustomers();
-      const { normalizeCustomerToContact } = await import("@/integrations/stripe/normalize");
-      const normalizedContacts = customers.map((c) => normalizeCustomerToContact(c, accountId));
       return {
         configResult,
-        eventsResult: { contacts: normalizedContacts, events: [], errors: [] },
+        eventsResult: { contacts: [], events: [], errors: [] },
       };
     }
   }
