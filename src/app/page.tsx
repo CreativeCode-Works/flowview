@@ -22,6 +22,17 @@ const PAIN_POINTS = [
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
+      {/* Nav */}
+      <nav className="flex items-center justify-between px-6 py-4">
+        <span className="text-sm font-semibold text-white">FlowView</span>
+        <Link
+          href="/login"
+          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-500"
+        >
+          Log in
+        </Link>
+      </nav>
+
       {/* Hero */}
       <section className="flex flex-1 flex-col items-center justify-center px-6 py-24 text-center">
         <p className="mb-4 text-sm font-medium uppercase tracking-wider text-blue-400">
