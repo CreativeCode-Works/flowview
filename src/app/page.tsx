@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { WaitlistForm } from "@/components/WaitlistForm";
 
 const PAIN_POINTS = [
@@ -66,9 +67,23 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-zinc-800 px-6 py-8">
-        <p className="text-center text-xs text-zinc-600">
-          FlowView &mdash; Automation observability for service businesses.
-        </p>
+        <div className="mx-auto flex max-w-5xl flex-col items-center gap-3">
+          <div className="flex gap-4 text-xs text-zinc-500">
+            <Link href="/privacy" className="hover:text-zinc-300">
+              Privacy Policy
+            </Link>
+            <span className="text-zinc-700">|</span>
+            <Link href="/terms" className="hover:text-zinc-300">
+              Terms of Service
+            </Link>
+          </div>
+          <p className="text-center text-xs text-zinc-600">
+            FlowView &mdash; Automation observability for service businesses.
+          </p>
+          <p className="text-center text-xs text-zinc-700">
+            Operated from the United States by CreativeCode Works.
+          </p>
+        </div>
       </footer>
     </div>
   );
